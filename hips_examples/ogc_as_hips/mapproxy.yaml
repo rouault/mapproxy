@@ -1,0 +1,68 @@
+# This demonstrates exposing a WMS server as a HIPS service
+# HIPS endpoints are:
+# - http://localhost:8080/hips/mars_wms
+# - http://localhost:8080/hips/mars_tiled_geodetic
+
+services:
+  demo:
+  hips:
+    #resampling_method: nearest_neighbour
+    resampling_method: bilinear
+    #resampling_method: bicubic
+    # populate_cache: false
+  #tms:
+  #  use_grid_names: true
+  #  # origin for /tiles service
+  #  origin: 'nw'
+  #kml:
+  #    use_grid_names: true
+  #wmts:
+  #wms:
+  #  srs: ['EPSG:4326', 'CRS:84', 'EPSG:32661']
+  #  md:
+  #    title: MapProxy WMS Proxy
+  #    abstract: This is a minimal MapProxy example.
+
+layers:
+  - name: mars_wms
+    title: MARS
+    sources: [mars_wms]
+    md:
+        hips:
+            # enabled: false
+            creator_did: ivo://unknown.authority/mars_wms
+            obs_title: MARS MOLA color
+            foo: bar
+            # hips_tile_width: 512
+            # hips_order: 5
+
+  - name: mars_tiled_geodetic
+    title: MARS, using internal cache
+    sources: [mars_tiled_geodetic]
+    md:
+        hips:
+            creator_did: ivo://unknown.authority/mars_wms
+            # obs_title: MARS MOLA color
+            # foo: bar
+            # hips_tile_width: 512
+            # hips_order: 5
+
+caches:
+  mars_tiled_geodetic:
+    grids: [geodetic]
+    sources: [mars_wms]
+
+
+sources:
+  mars_wms:
+    type: wms
+    req:
+      url: https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map&
+      layers: MOLA_color
+
+grids:
+    geodetic:
+        origin: nw
+        base: GLOBAL_GEODETIC
+
+globals:

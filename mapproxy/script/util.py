@@ -31,6 +31,8 @@ from mapproxy.script.export import export_command
 from mapproxy.script.grids import grids_command
 from mapproxy.script.scales import scales_command
 from mapproxy.script.wms_capabilities import wms_capabilities_command
+from mapproxy.script.hipsallsky import hipsallsky_command
+from mapproxy.script.hipsseed import hipsseed_command
 from mapproxy.version import version
 
 
@@ -317,6 +319,14 @@ commands = {
     'defrag-compact-cache': {
         'func': defrag_command,
         'help': 'De-fragmentate compact caches.'
+    },
+    'hips-allsky': {
+        'func': hipsallsky_command,
+        'help': 'Generate HIPS allsky preview file.'
+    },
+    'hips-seed': {
+        'func': hipsseed_command,
+        'help': 'Pre-generate HIPS tiles.'
     }
 }
 

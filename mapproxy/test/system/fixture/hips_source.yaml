@@ -1,0 +1,28 @@
+services:
+  tms:
+    use_grid_names: true
+    # origin for /tiles service
+    origin: 'nw'
+
+layers:
+  - name: hips
+    title: hips
+    sources: [hips_cache]
+
+caches:
+  hips_cache:
+    grids: [geodetic]
+    sources: [hips_source]
+
+sources:
+  hips_source:
+    type: hips
+    image:
+      format: image/jpeg
+    resampling_method: bilinear
+    url: http://localhost:42423/hips_source
+
+grids:
+    geodetic:
+        origin: nw
+        base: GLOBAL_GEODETIC

@@ -31,6 +31,8 @@ if platform.python_version_tuple() < ('2', '6'):
     # for mapproxy-seed
     install_requires.append('multiprocessing>=2.6')
 
+install_requires.append('healpy')
+
 def long_description(changelog_releases=10):
     import re
     import textwrap

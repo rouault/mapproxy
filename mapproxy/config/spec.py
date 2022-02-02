@@ -300,6 +300,7 @@ wms_130_layer_md = {
             'format': str,
         }
     ],
+    'hips': anything(),
 }
 
 grid_opts = {
@@ -333,7 +334,7 @@ ogc_service_md = {
             'vocabulary': string_type,
             'keywords': [string_type],
         }
-    ],
+    ]
 }
 
 band_source = {
@@ -443,6 +444,9 @@ mapproxy_yaml_spec = {
     },
     'services': {
         'demo': {},
+        'hips': {
+            'resampling_method': str(),
+        },
         'kml': {
             'use_grid_names': bool(),
         },
@@ -572,6 +576,11 @@ mapproxy_yaml_spec = {
             }),
             'debug': {
             },
+            'hips': {
+                required('url'): str(),
+                'resampling_method': str(),
+                'image': image_opts,
+            }
         })
     },
 

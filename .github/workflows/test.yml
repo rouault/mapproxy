@@ -29,7 +29,9 @@ jobs:
       
     strategy:
       matrix:
-        python-version: [2.7, 3.6, 3.7, 3.8, 3.9]
+        # 2.7 removed because some hips devs are py3 only
+        # 3.6 removed because of too old numba version
+        python-version: [3.7, 3.8, 3.9]
 
     env:
       MAPPROXY_TEST_COUCHDB: 'http://localhost:5984'
@@ -66,7 +68,7 @@ jobs:
     - name: Install dependencies ⏬
       run: |
         pip install -r requirements-tests.txt
-        if [[ ${{ matrix.python-version }} = 2.7 || ${{ matrix.python-version }} = 3.8 ]]; then pip install -U "Pillow!=8.3.0,!=8.3.1"; fi
+        if [[ ${{ matrix.python-version }} = 2.7 || ${{ matrix.python-version }} = 3.8 ]]; then pip install -U "Pillow!=8.3.0,!=8.3.1,!=9.0.0"; fi
         pip freeze
 
     - name: Run tests 🏗️

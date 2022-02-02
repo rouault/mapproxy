@@ -1,0 +1,22 @@
+services:
+  hips:
+    resampling_method: bicubic
+
+layers:
+  - name: direct
+    title: Direct Layer
+    sources: [direct]
+
+  - name: disabled
+    title: Disabled Layer
+    sources: [direct]
+    md:
+        hips:
+            enabled: false
+
+sources:
+  direct:
+    type: wms
+    req:
+      url: http://localhost:42423/service
+      layers: bar

@@ -1,0 +1,74 @@
+# This demonstrates exposing a HIPS source as OGC services
+# HIPS endpoints are:
+# - http://localhost:8080/hips/mars_wms
+# - http://localhost:8080/hips/mars_tiled_geodetic
+
+# Starts the following services:
+# Demo:
+#     http://localhost:8080/demo
+# WMS:
+#     capabilities: http://localhost:8080/service?REQUEST=GetCapabilities
+# WMTS:
+#     capabilities: http://localhost:8080/wmts/1.0.0/WMTSCapabilities.xml
+#     first tile: http://localhost:8080/wmts/mars_hips/geodetic/0/0/0.png
+
+services:
+  demo:
+  tms:
+    use_grid_names: true
+    # origin for /tiles service
+    origin: 'nw'
+  kml:
+      use_grid_names: true
+  wmts:
+  wms:
+    srs: ['EPSG:4326', 'CRS:84', 'EPSG:32661']
+    md:
+      title: MapProxy WMS Proxy
+      abstract: This is a minimal MapProxy example.
+
+layers:
+  - name: mars_hips
+    title: MARS
+    sources: [mars_hips_cache]
+
+  - name: mars_hips_north_polar
+    title: MARS
+    sources: [mars_hips_cache_north_polar]
+
+  - name: mars_hips_direct
+    title: MARS
+    sources: [mars_hips_source]
+
+caches:
+  mars_hips_cache:
+    grids: [geodetic]
+    sources: [mars_hips_source]
+
+  mars_hips_cache_north_polar:
+    grids: [north_polar]
+    sources: [mars_hips_source]
+
+sources:
+  mars_hips_source:
+    type: hips
+    image:
+      format: image/jpeg
+    resampling_method: bilinear
+    url: http://alasky.u-strasbg.fr/Planets/Mars_MOLA
+    # cache_hips_tiles: false
+
+grids:
+    geodetic:
+        origin: nw
+        base: GLOBAL_GEODETIC
+
+    north_polar:
+        origin: nw
+        srs: EPSG:32661
+        bbox: [-2000000, -2000000, 6000000, 6000000]
+        min_res: 31250
+        res_factor: 2
+        tile_size: [256, 256]
+
+globals:

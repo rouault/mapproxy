@@ -92,6 +92,8 @@ class DemoServer(Server):
             demo = self._render_tms_template('demo/tms_demo.html', req)
         elif 'wmts_layer' in req.args:
             demo = self._render_wmts_template('demo/wmts_demo.html', req)
+        elif 'hips_layer' in req.args:
+            demo = self._render_hips_template('demo/hips_demo.html', req)
         elif 'wms_capabilities' in req.args:
             internal_url = '%s/service?REQUEST=GetCapabilities'%(req.server_script_url)
             url = internal_url.replace(req.server_script_url, req.script_url)
@@ -124,7 +126,7 @@ class DemoServer(Server):
             url = internal_url.replace(req.server_script_url, req.script_url)
             demo = self._render_capabilities_template('demo/capabilities_demo.html', capabilities, 'TMS', url)
         elif req.path == '/demo/':
-            demo = self._render_template('demo/demo.html')
+            demo = self._render_template(req, 'demo/demo.html')
         else:
             resp = Response('', status=301)
             resp.headers['Location'] = req.script_url.rstrip('/') + '/demo/'
@@ -163,19 +165,29 @@ class DemoServer(Server):
         sorted_uncached_srs = [(s, s) for s in sorted_uncached_srs]
         return sorted_cached_srs + sorted_uncached_srs
 
-    def _render_template(self, template):
+    def _render_template(self, req, template):
         template = get_template(template, default_inherit="demo/static.html")
         tms_tile_layers = defaultdict(list)
         for layer in self.tile_layers:
             name = self.tile_layers[layer].md.get('name')
             tms_tile_layers[name].append(self.tile_layers[layer])
         wmts_layers = tms_tile_layers.copy()
+
+        hips_layer_names = []
+        if 'hips' in self.services:
+            for layer_name, layer in self.layers.items():
+                enabled = layer.md.get('hips', {}).get('enabled', True)
+                if enabled:
+                    _, _, _, allsky_available, _ = self._hips_info(req, layer_name)
+                    hips_layer_names.append([layer_name, allsky_available])
+
         return template.substitute(layers=self.layers,
                                    formats=self.image_formats,
                                    srs=self.srs,
                                    layer_srs=self.layer_srs,
                                    tms_layers=tms_tile_layers,
                                    wmts_layers=wmts_layers,
+                                   hips_layer_names=hips_layer_names,
                                    services=self.services)
 
     def _render_wms_template(self, template, req):
@@ -248,6 +260,67 @@ class DemoServer(Server):
                                    units=units,
                                    all_tile_layers=self.tile_layers,
                                    restful_url=restful_url)
+
+    def _hips_info(self, req, layer_name):
+        hips_internal_url = req.server_script_url + '/hips/' + layer_name
+
+        hips_order_max = 5
+        hips_tile_format = 'png'
+        hips_frame = 'planet'
+
+        # Download the /properties document to get a few metadata we
+        # need: hips_order_max, hips_tile_format and hips_frame
+        from mapproxy.client.http import HTTPClient, HTTPClientError
+        resp = HTTPClient(hips_internal_url).open(hips_internal_url + "/properties")
+
+        from mapproxy.util.hips import parse_properties
+
+        properties = parse_properties(resp.read().decode('utf-8'))
+        if 'hips_order' in properties: # Mandatory element
+            hips_order_max = int(properties['hips_order'])
+
+        if 'hips_tile_format' in properties: # Mandatory element
+            tile_format = None
+            value = properties['hips_tile_format']
+            for x in value.split(' '):
+                if x in ('jpeg', 'png'):
+                    tile_format = x
+                    break
+            if tile_format is None:
+                return Exception(f'hips_tile_format = {value} does not contain jpeg or png')
+            hips_tile_format = tile_format
+
+        if 'hips_frame' in properties:
+            hips_frame = properties['hips_frame']
+
+        # Check if the /Norder3/Allsky.png/.jpg file is already pregenerated.
+        try:
+            allsky_ext = 'png' if hips_tile_format == 'png' else 'jpg'
+            allsky_file = hips_internal_url + "/Norder3/Allsky." + allsky_ext
+            HTTPClient(hips_internal_url).open(allsky_file, method='HEAD')
+            allsky_available = True
+        except HTTPClientError:
+            allsky_available = False
+
+        return hips_order_max, hips_tile_format, hips_frame, allsky_available, allsky_file
+
+    def _render_hips_template(self, template, req):
+        hips_layer = req.args['hips_layer']
+        hips_url = req.script_url + '/hips/' + hips_layer
+
+        hips_order_max, hips_tile_format, hips_frame, allsky_available, allsky_file = self._hips_info(req, hips_layer)
+
+        allsky_msg = ''
+        if not allsky_available:
+            allsky_msg = f'<p><b>WARNING</b>: {allsky_file} does not exist. It should be pregenerated with "mapproxy-util hips-allsky -f path_to_mapproxy.yaml -l {hips_layer} -o 3 -c $(nproc)"</p>'
+
+        template = get_template(template, default_inherit="demo/static.html")
+        return template.substitute(hips_url=hips_url,
+                                   hips_layer=hips_layer,
+                                   hips_frame=hips_frame,
+                                   hips_order_max=hips_order_max,
+                                   hips_tile_format=hips_tile_format,
+                                   allsky_msg=allsky_msg)
 
     def _render_capabilities_template(self, template, xmlfile, service, url):
         template = get_template(template, default_inherit="demo/static.html")

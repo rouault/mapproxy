@@ -1,0 +1,21 @@
+{{py:
+menu_title = "HIPS"
+jscript_functions = None
+}}
+{{def jscript_openlayers}}
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.10.1.min.js"></script>
+<link rel="stylesheet" href="https://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.css" >
+<script type="text/javascript">var jqMenu = jQuery.noConflict();</script>
+<script type="text/javascript" src="https://aladin.u-strasbg.fr/AladinLite/api/v2/latest/aladin.min.js" charset="utf-8"></script>
+<div id="aladin-lite-div" style="width:70vw;height:70vh;"></div>
+<script type="text/javascript">
+var aladin = $.aladin("#aladin-lite-div", {showSimbadPointerControl: true });
+aladin.setImageSurvey(
+    aladin.createImageSurvey('test', 'test',
+    '{{hips_url}}', '{{hips_frame}}', {{hips_order_max}}, {imgFormat: '{{hips_tile_format}}'}));
+</script>
+{{enddef}}
+<h2>HIPS: AladinLite client on layer {{hips_layer}}</h2>
+{{allsky_msg}}
+
+

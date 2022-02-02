@@ -35,6 +35,23 @@ jscript_openlayers=None
 {{enddef}}
             <h2>About</h2>
             <p>MapProxy Version {{version}}</p>
+            {{if 'hips' in services}}
+            <h2>HIPS</h2>
+            <table class="code">
+                <tr>
+                    <th>Layer</th>
+                </tr>
+                {{for layer_name, allsky_available in hips_layer_names}}
+                <tr>
+                    {{if allsky_available}}
+                    <td class="value"><a href="../demo/?hips_layer={{layer_name}}">{{layer_name}}</a></td>
+                    {{else}}
+                    <td class="value"><a href="../demo/?hips_layer={{layer_name}}">{{layer_name}}</a> (Allsky file not pregenerated)</td>
+                    {{endif}}
+                </tr>
+                {{endfor}}
+            </table>
+            {{endif}}
             <h2>WMS</h2>
             {{if 'wms' in services}}
             <div class="capabilities">

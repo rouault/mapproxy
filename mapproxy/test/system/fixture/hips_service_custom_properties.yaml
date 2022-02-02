@@ -1,0 +1,32 @@
+services:
+  hips:
+
+layers:
+  - name: direct
+    title: Direct Layer
+    sources: [direct]
+    md:
+        hips:
+            creator_did: my_creator_did
+            obs_title: my_obs_title
+            hips_release_date: "2021-12-31T12:34:56Z"
+            hips_status: my_hips_status
+            hips_tile_format: jpeg
+            hips_order: 6
+            hips_tile_width: 512
+            hips_frame: mars
+            foo: bar
+
+  - name: disabled
+    title: Disabled Layer
+    sources: [direct]
+    md:
+        hips:
+            enabled: false
+
+sources:
+  direct:
+    type: wms
+    req:
+      url: http://localhost:42423/service
+      layers: bar

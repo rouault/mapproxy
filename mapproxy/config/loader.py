@@ -84,6 +84,7 @@ class ProxyConfiguration(object):
     def load_sources(self):
         self.sources = SourcesCollection()
         for source_name, source_conf in iteritems((self.configuration.get('sources') or {})):
+            source_conf['name'] = source_name
             self.sources[source_name] = SourceConfiguration.load(conf=source_conf, context=self)
 
     def load_tile_layers(self):
@@ -1008,6 +1009,59 @@ class DebugSourceConfiguration(SourceConfiguration):
         return DebugSource()
 
 
+class HIPSSourceConfiguration(SourceConfiguration):
+    source_type = ('hips',)
+
+    @memoize
+    def cache_dir(self):
+        cache_dir = self.conf.get('cache', {}).get('directory')
+        if cache_dir:
+            if self.conf.get('cache_dir'):
+                log.warning('found cache.directory and cache_dir option for %s, ignoring cache_dir',
+                self.conf['name'])
+            return self.context.globals.abspath(cache_dir)
+
+        return self.context.globals.get_path('cache_dir', self.conf,
+            global_key='cache.base_dir')
+
+    def lock_dir(self):
+        lock_dir = self.context.globals.get_path('cache.tile_lock_dir', self.conf)
+        if not lock_dir:
+            lock_dir = os.path.join(self.cache_dir(), 'tile_locks')
+        return lock_dir
+
+    def source(self, params=None):
+        from mapproxy.source.hips import HIPSSource
+
+        url = self.conf['url']
+        http_client, url = self.http_client(url)
+
+        coverage = self.coverage()
+        image_opts = self.image_opts()
+
+        resampling_method = self.conf.get('resampling_method', 'bicubic')
+        if resampling_method not in ('nearest_neighbour', 'bilinear', 'bicubic'):
+            raise ValueError(f'unsupported resampling_method = {resampling_method}')
+
+        source = HIPSSource(http_client, url, resampling_method, coverage=coverage, image_opts=image_opts)
+
+        cache_hips_tiles = self.conf.get('cache_hips_tiles', True)
+        if cache_hips_tiles:
+            from mapproxy.cache.base import TileLocker
+            from mapproxy.cache.file import FileCache
+
+            cache_dir = os.path.join(self.cache_dir(), self.conf['name'], 'hips_tiles')
+            cache = FileCache(cache_dir, 'jpg' if source.hips_tile_format == 'jpeg' else 'png')
+
+            lock_timeout = self.context.globals.get_value('http.client_timeout', {})
+            lock_cache_id = cache.lock_cache_id
+            locker = TileLocker(self.lock_dir(), lock_timeout, lock_cache_id)
+
+            source.locker = locker
+            source.cache = cache
+
+        return source
+
 source_configuration_types = {
     'wms': WMSSourceConfiguration,
     'arcgis': ArcGISSourceConfiguration,
@@ -1015,6 +1069,7 @@ source_configuration_types = {
     'debug': DebugSourceConfiguration,
     'mapserver': MapServerSourceConfiguration,
     'mapnik': MapnikSourceConfiguration,
+    'hips': HIPSSourceConfiguration,
 }
 
 
@@ -1883,6 +1938,20 @@ class ServiceConfiguration(ConfigurationBase):
                 else:
                     layers[tile_layer.md['name_internal']] = tile_layer
         return layers
+
+    def hips_service(self, conf):
+        from mapproxy.service.hips import HIPSServer
+        root_layer = self.context.wms_root_layer.wms_layer()
+        tile_layers = self.tile_layers(conf)
+        resampling_method = conf.get('resampling_method', 'bicubic')
+        if resampling_method not in ('nearest_neighbour', 'bilinear', 'bicubic'):
+            raise ValueError(f'unsupported resampling_method = {resampling_method}')
+        cache_dir = self.context.globals.get_path('cache.base_dir', conf)
+        lock_dir = self.context.globals.get_path('cache.lock_dir', conf)
+        timeout = self.context.globals.get_value('http.client_timeout', conf)
+        populate_cache = conf.get('populate_cache', True)
+        return HIPSServer(cache_dir, lock_dir, timeout, populate_cache,
+                          root_layer, tile_layers, resampling_method)
 
     def kml_service(self, conf):
         from mapproxy.service.kml import KMLServer

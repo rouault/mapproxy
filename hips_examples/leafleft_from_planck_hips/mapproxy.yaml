@@ -1,0 +1,71 @@
+# This demonstrates exposing a HIPS source as OGC services
+
+# Starts the following services:
+# Demo:
+#     http://localhost:8080/demo
+# WMS:
+#     capabilities: http://localhost:8080/service?REQUEST=GetCapabilities
+# WMTS:
+#     capabilities: http://localhost:8080/wmts/1.0.0/WMTSCapabilities.xml
+#     first tile: http://localhost:8080/wmts/planck_hips/geodetic/0/0/0.png
+
+services:
+  demo:
+  tms:
+    use_grid_names: true
+    # origin for /tiles service
+    origin: 'nw'
+  kml:
+      use_grid_names: true
+  wmts:
+  wms:
+    srs: ['EPSG:4326', 'CRS:84', 'EPSG:32661']
+    md:
+      title: MapProxy WMS Proxy
+      abstract: This is a minimal MapProxy example.
+
+layers:
+  - name: planck_hips
+    title: MARS
+    sources: [planck_hips_cache]
+
+  - name: planck_hips_north_polar
+    title: MARS
+    sources: [planck_hips_cache_north_polar]
+
+  - name: planck_hips_direct
+    title: MARS
+    sources: [planck_hips_source]
+
+caches:
+  planck_hips_cache:
+    grids: [geodetic]
+    sources: [planck_hips_source]
+
+  planck_hips_cache_north_polar:
+    grids: [north_polar]
+    sources: [planck_hips_source]
+
+sources:
+  planck_hips_source:
+    type: hips
+    image:
+      format: image/jpeg
+    resampling_method: bilinear
+    url: http://alasky.cds.unistra.fr/PLANCK/R2/COM_CMB_IQU-smica-field-Int_2048_R2.00
+    # cache_hips_tiles: false
+
+grids:
+    geodetic:
+        origin: nw
+        base: GLOBAL_GEODETIC
+
+    north_polar:
+        origin: nw
+        srs: EPSG:32661
+        bbox: [-2000000, -2000000, 6000000, 6000000]
+        min_res: 31250
+        res_factor: 2
+        tile_size: [256, 256]
+
+globals:

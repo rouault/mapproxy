@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	
+	<title>Title</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+
+</head>
+<body>
+
+
+
+<div id="map" style="width: 1024px; height: 768px;"></div>
+<script>
+
+    var map = L.map('map', {crs: L.CRS.EPSG4326}).setView([0,0], 0);
+
+    var tiles = L.tileLayer('http://localhost:8080/wmts/planck_hips/geodetic/{z}/{x}/{y}.png', {
+        tms: false,
+        zoomOffset: 1, // WMTS geodetic tile matrix set initial level is a single tile, hence a +1 offset
+        maxZoom: 10,
+        attribution: 'Attribution',
+        tileSize: 256,
+    }).addTo(map);
+
+    let Position = L.Control.extend({ 
+        _container: null,
+        options: {
+          position: 'bottomleft'
+        },
+
+        onAdd: function (map) {
+          var latlng = L.DomUtil.create('div', 'mouseposition');
+          this._latlng = latlng;
+          return latlng;
+        },
+
+        updateHTML: function(lat, lng) {
+          this._latlng.innerHTML = "Latitude: " + lat + "   Longitiude: " + lng;
+        }
+    });
+
+    this.position = new Position();
+    map.addControl(this.position);
+
+    map.addEventListener('mousemove', (event) => {
+        let lat = Math.round(event.latlng.lat * 100000) / 100000;
+        let lng = Math.round(event.latlng.lng * 100000) / 100000;
+        this.position.updateHTML(lat, lng);
+    });
+
+</script>
+
+
+
+</body>
+</html>

@@ -26,15 +26,15 @@ services:
 
 layers:
   - name: planck_hips
-    title: MARS
+    title: Planck hips
     sources: [planck_hips_cache]
 
   - name: planck_hips_north_polar
-    title: MARS
+    title: Planck hips
     sources: [planck_hips_cache_north_polar]
 
   - name: planck_hips_direct
-    title: MARS
+    title: Planck hips
     sources: [planck_hips_source]
 
 caches:

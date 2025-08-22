@@ -29,7 +29,6 @@ log = logging.getLogger('mapproxy.config')
 with open(os.path.join(os.path.dirname(__file__), 'config-schema.json')) as schema_file:
     schema = json.load(schema_file)
 
-
 TAGGED_SOURCE_TYPES = [
     'wms',
     'mapserver',

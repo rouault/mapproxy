@@ -1072,6 +1072,29 @@ class TileSourceConfiguration(SourceConfiguration):
                            error_handler=error_handler, res_range=res_range)
 
 
+class OGCAPITilesSourceConfiguration(SourceConfiguration):
+    supports_meta_tiles = True
+    source_type = ('ogcapitiles',)
+    defaults = {}
+
+    def source(self, params=None):
+        from mapproxy.source.ogcapitiles import OGCAPITilesSource
+
+        landingpage_url = self.conf['landingpage_url']
+
+        http_client, landingpage_url = self.http_client(landingpage_url)
+
+        collection = self.conf.get('collection', None)
+
+        coverage = self.coverage()
+        image_opts = self.image_opts()
+        error_handler = self.on_error_handler()
+        res_range = resolution_range(self.conf)
+
+        return OGCAPITilesSource(self.context, landingpage_url, collection, http_client, coverage=coverage, image_opts=image_opts,
+                                 error_handler=error_handler, res_range=res_range)
+
+
 def file_ext(mimetype):
     from mapproxy.request.base import split_mime_type
     _mime_class, format, _options = split_mime_type(mimetype)
@@ -1086,7 +1109,6 @@ class DebugSourceConfiguration(SourceConfiguration):
         from mapproxy.source import DebugSource
         return DebugSource()
 
-
 source_configuration_types = {
     'wms': WMSSourceConfiguration,
     'arcgis': ArcGISSourceConfiguration,
@@ -1094,6 +1116,7 @@ source_configuration_types = {
     'debug': DebugSourceConfiguration,
     'mapserver': MapServerSourceConfiguration,
     'mapnik': MapnikSourceConfiguration,
+    'ogcapitiles': OGCAPITilesSourceConfiguration,
 }
 
 

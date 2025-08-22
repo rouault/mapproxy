@@ -593,6 +593,10 @@ mapproxy_yaml_spec = {
             }),
             'debug': {
             },
+            'ogcapitiles': combined(source_commons, {
+                required('landingpage_url'): str(),
+                'collection': str(),
+            }),
         })
     },
 
